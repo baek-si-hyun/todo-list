@@ -1,4 +1,3 @@
-import React from "react";
 import ReactDOM from "react-dom/client";
 import { RecoilRoot } from "recoil";
 import { ThemeProvider } from "styled-components";
@@ -59,11 +58,10 @@ table {
   box-sizing: border-box;
 }
 body {
-  font-weight: 300;
-  font-family: 'Source Sans Pro', sans-serif;
   background-color: ${(props) => props.theme.bgColor};
   color:black;
   line-height: 1.2;
+  font-family: "Pretendard", sans-serif;
 }
 a {
   text-decoration:none;

@@ -1,18 +1,18 @@
 import { atom } from "recoil";
 
-export interface ITodo {
+export interface IToDo {
   id: number;
   text: string;
 }
 
 interface IToDoState {
-  [key: string]: ITodo[];
+  [key: string]: IToDo[];
 }
 
 export const toDoState = atom<IToDoState>({
   key: "toDo",
   default: {
-    toDo: [
+    toDodsdvsdhhhhhhhhhhhh: [
       { text: "해야할일을", id: 0 },
       { text: "직접", id: 1 },
       { text: "만들어보세요", id: 2 },
@@ -24,5 +24,7 @@ export const toDoState = atom<IToDoState>({
       { text: "이건 이름이 되게 긴데 마우스를 여기에도 올려보세요", id: 8 },
     ],
     Done: [],
+    dvsdv: [],
+    Dosdvsdne: [],
   },
 });

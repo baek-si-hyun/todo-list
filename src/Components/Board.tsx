@@ -2,29 +2,59 @@ import { useForm } from "react-hook-form";
 import { Droppable } from "react-beautiful-dnd";
 import styled from "styled-components";
 import DragabbleCard from "./DraggableCard";
-import { ITodo, toDoState } from "../atoms";
+import { IToDo, toDoState } from "../atoms";
 import { useSetRecoilState } from "recoil";
+import { useState } from "react";
 
-const Wrapper = styled.div`
-  width: 300px;
+const Wrapper = styled.div<{ active: boolean }>`
+  width: 280px;
   padding-top: 10px;
   background-color: ${(props) => props.theme.boardColor};
-  border-radius: 5px;
+  border-radius: 10px;
   min-height: 300px;
   display: flex;
+  justify-content: space-between;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0px 3px 10px black;
+  box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.15);
 `;
-const Title = styled.h2`
-  text-align: center;
+const BoardTop = styled.div`
+  width: 100%;
+  position: relative;
+  padding: 15px 20px;
+  display: flex;
+`;
+const Title = styled.h2<{ active: boolean }>`
+  font-size: 1.6rem;
   font-weight: 600;
-  font-size: 18px;
+  width: ${(props) => (props.active ? "70%" : "100%")};
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: width 0.3s ease 0s;
 `;
-interface IAreaProps {
-  isDraggingFromThis: boolean;
-  isDraggingOver: boolean;
-}
+const Buttons = styled.div<{ active: boolean }>`
+  display: flex;
+  gap: 2px;
+  position: absolute;
+  right: 1rem;
+  opacity: ${(props) => (props.active ? 1 : 0)};
+  transition: opacity 0.3s;
+`;
+const Button = styled.button`
+  padding: 0;
+  border: none;
+  width: 2rem;
+  cursor: pointer;
+`;
+const Icon = styled.span`
+  padding: 5px;
+  border-radius: 0.2rem;
+  transition: background-color 0.3s;
+  :hover {
+    background-color: #d7d7d7;
+  }
+`;
 const Area = styled.div<IAreaProps>`
   background-color: ${(props) =>
     props.isDraggingOver
@@ -39,45 +69,52 @@ const Area = styled.div<IAreaProps>`
 
 const Form = styled.form`
   width: 100%;
+  height: 3.5rem;
   display: flex;
   justify-content: center;
-  padding-bottom: 10px;
+  border-top: 2px solid rgba(0, 0, 0, 0.15);
+  border: none;
   input {
     font-size: 16px;
     border: 0;
     background-color: white;
-    width: 80%;
-    padding: 10px;
-    border-radius: 5px;
-    text-align: center;
-    margin: 0 auto;
+    color: ${(props) => props.theme.textColor};
+    flex-grow: 1;
+    padding: 10px 24px;
+    border-radius: 0 0 0.6rem 0.6rem;
+    outline: none;
+    border: none;
+    transition: background-color 0.3s, color 0.3s;
+  }
+  input:placeholder-shown {
+    text-overflow: ellipsis;
+  }
+  input:focus {
+    background-color: #5e5e5ef8;
+    color: #fff;
+    ::placeholder {
+      color: #fff;
+    }
   }
 `;
 
+interface IAreaProps {
+  isDraggingFromThis: boolean;
+  isDraggingOver: boolean;
+}
+
 interface IBoardProps {
-  toDos: ITodo[];
+  toDos: IToDo[];
   boardId: string;
 }
 
-interface IForm {
+export interface IForm {
   toDo: string;
 }
 
-const BoardTop = styled.div`
-  position: relative;
-`;
-const Buttons = styled.div`
-  display: flex;
-  gap: 2px;
-  position: absolute;
-  top: 0;
-  right: 1rem;
-`;
-const Button = styled.div`
-  cursor: pointer;
-`;
 function Board({ toDos, boardId }: IBoardProps) {
   const setToDos = useSetRecoilState(toDoState);
+  const [active, setActive] = useState(false);
   const { register, setValue, handleSubmit } = useForm<IForm>();
   const onValid = ({ toDo }: IForm) => {
     const newToDo = {
@@ -87,29 +124,71 @@ function Board({ toDos, boardId }: IBoardProps) {
     setToDos((allBoards) => {
       return {
         ...allBoards,
-        [boardId]: [newToDo, ...allBoards[boardId]],
+        [boardId]: [...allBoards[boardId], newToDo],
       };
     });
     setValue("toDo", "");
   };
 
-  const onClick = (event: any) => {
-    console.log(event.currentTarget.id);
+  const onEdit = (boardId: string) => {
+    const newBoardId = window.prompt("Enter the board name to edit", boardId);
+    if (newBoardId === boardId) {
+      alert("기존 리스트와 이름이 겹칩니다");
+      return;
+    }
+    if (newBoardId === "") {
+      alert("반드시 이름을 입력해야합니다.");
+      return;
+    }
+    if (newBoardId !== null) {
+      setToDos((allBoards) => {
+        const reminder = Object.keys(allBoards).filter(
+          (board) => board !== boardId
+        );
+        let boards = {};
+        const oldBoards = reminder.map((board) => {
+          boards = { ...boards, [board]: allBoards[board] };
+        });
+        oldBoards.map(() => {
+          boards = { ...boards, [newBoardId]: allBoards[boardId] };
+        });
+        return { ...boards };
+      });
+    }
   };
+
+  const onDelete = (boardId: string) => {
+    setToDos((allBoards) => {
+      const boardsList = Object.keys(allBoards).filter(
+        (board) => board !== boardId
+      );
+      let boards = {};
+      boardsList.map((board) => {
+        boards = { ...boards, [board]: allBoards[board] };
+      });
+
+      return { ...boards };
+    });
+  };
+
   return (
-    <Wrapper>
+    <Wrapper
+      onMouseOver={() => setActive(true)}
+      onMouseOut={() => setActive(false)}
+      active={active}
+    >
       <BoardTop>
-        <Title>{boardId}</Title>
-        <Buttons>
-          <Button onClick={onClick}>
-            <span className="material-symbols-outlined">edit</span>
+        <Title active={active}>{boardId}</Title>
+        <Buttons active={active}>
+          <Button onClick={() => onEdit(boardId)}>
+            <Icon className="material-symbols-outlined">edit</Icon>
           </Button>
-          <Button onClick={onClick}>
-            <span className="material-symbols-outlined">delete</span>
+          <Button onClick={() => onDelete(boardId)}>
+            <Icon className="material-symbols-outlined">delete</Icon>
           </Button>
-          <Button onClick={onClick}>
-            <span className="material-symbols-outlined">drag_handle</span>
-          </Button>
+          {/* <Button>
+            <Icon className="material-symbols-outlined">drag_handle</Icon>
+          </Button> */}
         </Buttons>
       </BoardTop>
 
@@ -127,6 +206,7 @@ function Board({ toDos, boardId }: IBoardProps) {
                 index={index}
                 toDoId={toDo.id}
                 toDoText={toDo.text}
+                boardId={boardId}
               />
             ))}
             {magic.placeholder}
